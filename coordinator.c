@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -8,17 +9,31 @@ int main () {
 	key_t key = 123;
 	const int size = 1024;
 	int shm_id;
-	int* shaddr, *ptr;
+	int* array;
 	
-	shm_id = shmget(key, size, IPC_CREAT);
+	shm_id = shmget(key, size, IPC_CREAT | IPC_EXCL | 0666);
+
+	if (shm_id < 0) {
+		perror("shmget");
+		exit(1);
+	}
+
+	array = (int*) shmat(shm_id,0,0);
+	printf("Shared memory id: %d\n", shm_id);
 	
-	shaddr = (int*) shmat(shm_id,0,0);
+	int i = 0;
+	array[0] = 5;
 
-	printf("Shared memory attached at: %p\n", shaddr);
+	/*int j = 0;
+	for (j=0; j < 3; j++) {
+		printf("%d", array[j]);
+	}*/
 
-	shmdt(shaddr); 
+	printf("%d", array[0]);
 
-	shmctl(shm_id, IPC_RMID, 0);
+	shmdt(array); 
+
+	shmctl(shm_id, IPC_RMID, NULL);
 
 	return 0;
 	
